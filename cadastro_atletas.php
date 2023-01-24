@@ -195,7 +195,6 @@
 </head>
 
 <body>
-
   <div class="box">
     <div class="row">
       <form action="save_athlete.php" method="post" enctype="multipart/form-data">

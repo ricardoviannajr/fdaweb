@@ -6,6 +6,20 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Cadastro e Controle - FDADF</title>
+    <script>
+    function validarSenhas() {
+        var senha = document.getElementById("senha").value;
+        var confirma_senha = document.getElementById("confirma_senha").value;
+        var erro_senhas = document.getElementById("erro_senhas");
+
+        if (senha != confirma_senha) {
+            erro_senhas.innerHTML = "As senhas não conferem.";
+            erro_senhas.style.display = "block";
+        } else {
+            erro_senhas.style.display = "none";
+        }
+    }
+    </script>
     <style>
         /*
       color pallet
@@ -36,7 +50,7 @@
             background-color: rgb(66, 92, 99);
             padding: 40px;
             border-radius: 15px;
-            width: 30%;
+            width: 25%;
             color: white;
         }
 
@@ -149,36 +163,37 @@
 
     <div class="box">
         <div class="row">
-            <form action=".php" method="post" enctype="multipart/form-data">
+            <form action="save_login.php" method="post" enctype="multipart/form-data">
                 <fieldset>
-                    <legend><b>Cadastro de Clubes</b></legend>
+                    <legend><b>Cadastro</b></legend>
                     <br>
                     <div class="column">
                         <div class="inputBox">
-                            <input type="text" class="inputUser" id="name" name="name" required>
-                            <label for="name" class="labelInput">Nome</label>
+                            <input type="text" class="inputUser" id="nome" name="nome" required>
+                            <label for="nome" class="labelInput">Nome</label>
                         </div><br><br>
                         <div class="inputBox">
-                            <input type="text" class="inputUser" id="cnpj" name="cnpj" required>
-                            <label for="cnpj" class="labelInput">CNPJ</label>
+                            <input type="email" class="inputUser" id="usuario" name="usuario" required>
+                            <label for="usuario" class="labelInput">E-mail</label>
                         </div><br><br>
                         <div class="inputBox">
-                            <input type="text" class="inputUser" id="tecnico_responsavel" name="tecnico_responsavel" required>
-                            <label for="tecnico_responsavel" class="labelInput">Técnico Responsável</label>
+                            <input type="password" class="inputUser" id="senha" name="senha" required>
+                            <label for="senha" class="labelInput">Senha</label>
                         </div><br><br>
                         <div class="inputBox">
-                            <input type="text" class="inputUser" id="contact_number" name="contact_number" required>
-                            <label for="contact_number" class="labelInput">Telefone de
-                                Contato</label>
-                        </div><br><br>
+                            <input type="password" class="inputUser" id="confirma_senha" name="confirma_senha" required onblur="validarSenhas()">
+                            <label for="confirma_senha" class="labelInput">Confirme sua Senha</label>
+                        </div><br>
+                        <span id="erro_senhas" style="display: none; color: red;">As senhas não conferem!</span>
+                        <br>
                         <div class="inputBox">
-                            <input type="email" class="inputUser" id="email" name="email" required>
-                            <label for="email" class="labelInput">E-mail</label>
+                            <input type="text" class="inputUser" id="cpf" name="cpf" required>
+                            <label for="cpf" class="labelInput">CPF</label>
                         </div><br><br>
                         <div class="inputBox">
                             <input type="submit" name="submit" id="submit"><br><br>
                             <input type="reset" name="reset" id="reset">
-                        </div><br><br>
+                        </div>
                     </div>
                 </fieldset>
             </form>

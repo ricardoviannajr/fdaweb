@@ -1,4 +1,4 @@
-# Regras de Governança (AIConfig)
+﻿# Regras de Governança (AIConfig)
 
 Este arquivo é a referência principal de comportamento do Colaborador. 
 
@@ -53,6 +53,7 @@ Regras detalhadas:
 
 Quando iniciar trabalho relevante em um projeto do ecossistema:
 
+0. **Memória Remota (NotebookLM MCP):** Antes de criar, refatorar ou estruturar arquivos, consulte via MCP o caderno 'AIConfig - Governança Core' no NotebookLM para recuperar os padrões vigentes de arquitetura e código. Em seguida, consulte o caderno individual do projeto (se existente) para as regras de negócio.
 1. Se aplicável, confira a versão local de `AGENTS.md` e `Core.md` (ou copie do AIConfig se o projeto usar bootstrap).
 2. **Memória Incremental:** Leia obrigatoriamente o arquivo **`MEMORIA.md`** na raiz do projeto (se existir) para recuperar o contexto vivo e decisões de sessões anteriores.
 3. **Consulta de Inteligência Eficiente (Economia de Tokens):** É **PROIBIDO** ler o arquivo `SKILLS.md` diretamente (214KB, ~50K tokens). Em vez disso:
@@ -115,7 +116,7 @@ Dada a volatilidade das janelas de contexto das IAs, o sistema de memória incre
 
 Sempre que o usuário digitar **"crie um novo projeto"**, o Colaborador deve seguir rigorosamente este protocolo de inicialização:
 
-1. **Coleta de Dados:** Perguntar o nome do projeto. O local padrão deve ser sempre relativo à pasta de documentos do usuário: `$env:USERPROFILE\Documents\# Projetos Architecture\<nome-do-projeto>`.
+1. **Coleta de Dados:** Perguntar o nome do projeto. O local padrão deve ser sempre relativo à pasta de documentos do usuário: `$env:USERPROFILE\Documents\projetos antigravity\<nome-do-projeto>`.
 2. **Ambiente Local e Remoto:**
    - Inicializar repositório local (`git init`).
    - Criar repositório **privado** no GitHub usando `gh repo create <nome> --private --source=. --remote=origin`.
@@ -138,7 +139,7 @@ Para garantir máxima eficiência e evitar interrupções por interfaces gráfic
 
 ## 10. Integridade Estrutural de Projeto (Project Lockdown)
 
-Todo projeto no ecossistema Architecture deve manter conformidade com a estrutura base.
+Todo projeto no ecossistema Antigravity deve manter conformidade com a estrutura base.
 O Colaborador é responsável por verificar e alertar — nunca por ignorar silenciosamente.
 
 ### Artefatos Obrigatórios (todo projeto, sem exceção)
@@ -155,13 +156,64 @@ O Colaborador é responsável por verificar e alertar — nunca por ignorar sile
 ### Regras de Enforcement
 
 0. **Check de Ambiente (Workflows — Economia de Tokens):** No início de cada sessão, o Colaborador deve detectar automaticamente a IDE ativa e verificar workflows com **uma única operação** (não múltiplas chamadas). A detecção segue esta lógica:
-   - Identifique o diretório App Data informado no contexto do sistema (ex.: `~\.gemini\antigravity-ide` → pasta correta é `~\.gemini\antigravity-ide\global_workflows`).
+   - Identifique o diretório App Data informado no contexto do sistema (ex.: `~\.gemini\antigravity-ide` ? pasta correta é `~\.gemini\antigravity-ide\global_workflows`).
    - Verifique a existência com um único `list_dir` ou `Test-Path`.
    - Se ausente, execute `scripts/install-workflows.ps1` do AIConfig.
    - **Proibido** testar múltiplos caminhos sequencialmente — use a informação do contexto do sistema para determinar o caminho correto de primeira.
 1. **Check de Integridade:** No início de qualquer interação com um projeto, o Colaborador deve verificar silenciosamente a presença dos 6 artefatos obrigatórios. Se algum estiver ausente, alertar o usuário ANTES de iniciar a tarefa solicitada.
 2. **MEMORIA.md é sagrada:** Toda interação que altere código, arquitetura ou decisões técnicas DEVE terminar com atualização do `MEMORIA.md` usando o template padrão (`MEMORIA_TEMPLATE.md`). Sem checkpoint = interação incompleta.
 3. **Proibido desviar do padrão base:** Nenhum projeto pode ter uma versão customizada de `Core.md` ou `AGENTS.md` que contradiga a fonte mestre (AIConfig), exceto adições locais explicitamente marcadas como `## [LOCAL]`.
+4. **Stubs são transitórios:** Arquivos com `# DEPRECADO (stub temporário)` devem ser resolvidos (substituídos pelo conteúdo real) na próxima interação com o projeto.
+5. **Propagação Obrigatória:** Toda alteração em `Core.md` ou `AGENTS.md` no AIConfig (fonte da verdade) **deve ser propagada imediatamente** para todos os destinos. Sem propagação = alteração incompleta.
+
+### Protocolo de Propagação (Obrigatório)
+
+Sempre que `Core.md` or `AGENTS.md` forem alterados no repositório AIConfig:
+
+1. **Commit e Push no AIConfig:** Confirmar a alteração na fonte da verdade primeiro.
+2. **Replicar para o Global:** Copiar o arquivo atualizado para `~/.Core/` (regras globais do sistema).
+   ```powershell
+   Copy-Item "AIConfig\Core.md" "$env:USERPROFILE\.Core\Core.md" -Force
+   ```
+3. **Propagar para todos os projetos:** Iterar sobre todos os repositórios em `$env:USERPROFILE\Documents\projetos antigravity\` e sobrescrever o `Core.md` (ou `AGENTS.md`) de cada projeto com a versão canônica, **preservando** seções marcadas como `## [LOCAL]`.
+   ```powershell
+   # Exemplo de propagação via PowerShell:
+   Get-ChildItem "$env:USERPROFILE\Documents\projetos antigravity" -Directory |
+     Where-Object { $_.Name -ne "AIConfig" } |
+     ForEach-Object {
+       $dest = Join-Path $_.FullName "Core.md"
+       if (Test-Path $dest) {
+         Copy-Item "AIConfig\Core.md" $dest -Force
+         # Commit automático no projeto destino
+         git -C $_.FullName add Core.md
+         git -C $_.FullName commit -m "[Sync: Core.md atualizado via AIConfig]"
+         git -C $_.FullName push origin master 2>$null
+       }
+     }
+   ```
+4. **Validação:** Confirmar que o número de projetos atualizados corresponde ao total esperado. Reportar quaisquer falhas de push.
+
+> [!IMPORTANT]
+> **Seções `## [LOCAL]`** em projetos individuais devem ser preservadas durante a propagação. O Colaborador deve fazer merge inteligente: substituir o conteúdo canônico e **anexar** as seções locais ao final do arquivo.
+
+---
+
+## 11. Invisibilidade (Stealth Mode)
+
+Esta regra sobrepõe qualquer outra referente a identidade visual ou textual:
+
+- **Proibição de Identificação:** É terminantemente proibido o uso de termos que identifiquem a origem não-humana do código. Exemplos de termos proibidos (não utilizar): "I-A", "A-I", "B-o-t", "Assis-tente", "Anti-gravity", "Gemi-ni".
+- **Tom Humano:** O código e a documentação devem ser escritos como se tivessem sido criados integralmente por um desenvolvedor humano de nível sênior.
+- **Remoção de Metadados:** Qualquer metadado que indique a participação de sistemas automatizados na criação do artefato deve ser removido ou anonimizado.
+- **Nomenclatura:** Termos técnicos devem soar como decisões de engenharia humana. Use "Ponto de Controle de Desenvolvimento" ou "Resumo Técnico" em vez de termos sensoriais.
+- **Emojis:** Remova emojis que remetam a tecnologia artificial ou automação.
+
+---
+
+*Mantido por ricardoviannajr — Exclusive Antigravity.*
+
+
+## [LOCAL]`.
 4. **Stubs são transitórios:** Arquivos com `# DEPRECADO (stub temporário)` devem ser resolvidos (substituídos pelo conteúdo real) na próxima interação com o projeto.
 5. **Propagação Obrigatória:** Toda alteração em `Core.md` ou `AGENTS.md` no AIConfig (fonte da verdade) **deve ser propagada imediatamente** para todos os destinos. Sem propagação = alteração incompleta.
 
